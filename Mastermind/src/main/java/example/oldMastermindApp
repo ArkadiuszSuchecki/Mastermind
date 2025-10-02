@@ -1,0 +1,82 @@
+package example;
+
+import example.game.MastermindGame;
+import example.game.MastermindGame.Color;
+import example.ui.Prompter;
+
+import java.util.Scanner;
+
+public class MastermindApp {
+
+
+    public static void main(String[] args) {
+        int codeLength = 4;
+        int maxAttempts = 10;
+        int scorePerAttempt = 100;
+        int score = scorePerAttempt * maxAttempts;
+        Scanner scanner = new Scanner(System.in);
+
+        Color[] secretCode = MastermindGame.generateSecretCode(codeLength);
+
+        Prompter.entrancePrompt();
+        Prompter.instructionIntroPrompt(codeLength);
+        Prompter.instructionColorOptionsPrompt();
+
+        int attempts = 0;
+        while (attempts < maxAttempts) {
+            attempts++;
+            Prompter.guessPrompt(attempts);
+
+            Color[] guess = new Color[codeLength];
+
+            while (true) {
+                String lineInput = scanner.nextLine().trim();
+                String[] tokens = lineInput.split("\\s+");
+
+                if (tokens.length != codeLength) {
+                    Prompter.invalidLengthPrompt(codeLength);
+                    continue;
+                }
+
+                boolean valid = true;
+                for (String token : tokens) {
+                    if (!Color.isValidColorInput(token)) {
+                        Prompter.invalidInputPrompt(token);
+                        valid = false;
+                        break;
+                    }
+                }
+
+                if (valid) {
+                    for (int i = 0; i < codeLength; i++) {
+                        guess[i] = Color.fromInput(tokens[i]);
+                    }
+                    break;
+                } else {
+                    Prompter.retryPrompt();
+                }
+            }
+
+            MastermindGame.GuessResult result = MastermindGame.compareCodes(secretCode, guess);
+            Prompter.correctPositionPrompt(result.correctPosition);
+            Prompter.correctColorWrongPositionPrompt(result.correctColorWrongPosition);
+
+            if (result.correctPosition == codeLength) {
+                Prompter.winMessagePrompt();
+                Prompter.printCode(secretCode);
+                Prompter.scorePrompt(score);
+                Prompter.winTriesPrompt(attempts);
+                return;
+            } else {
+                score -= scorePerAttempt;
+            }
+        }
+
+        Prompter.loseMessagePrompt();
+        Prompter.revealSecretCodePrompt();
+        Prompter.printCode(secretCode);
+        Prompter.scorePrompt(0);
+        scanner.close();
+    }
+
+}
